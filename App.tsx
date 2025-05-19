@@ -6,7 +6,6 @@
  */
 
 import React from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Home from './ToDoList/Home';
 import { ScrollView } from 'react-native';
 
