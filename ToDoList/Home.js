@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  Alert
+  Alert,
+  FlatList
 } from 'react-native';
 
 const TodoList = () => {
@@ -15,16 +16,41 @@ const TodoList = () => {
   const [tasks, setTasks] = useState([]);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedTasks, setSelectedTasks] = useState([]);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+
 
   const addTask = () => {
+    // if (task.trim()) {
+    //   setTasks([...tasks, { id: Date.now(), text: task, completed: false, pinned: false}]);
+    //   setTask('');
+    // } else {
+    //   Alert.alert('Error', 'Task cannot be empty');
+    // }
     if (task.trim()) {
-      setTasks([...tasks, { id: Date.now().toString(), text: task, completed: false }]);
+      if (editingTaskId !== null) {
+        const updatedTasks = tasks.map(t =>
+          t.id === editingTaskId ? { ...t, text: task } : t
+        );
+        setTasks(updatedTasks);
+        setEditingTaskId(null);
+      } else {
+        setTasks([
+          ...tasks,
+          { id: Date.now(), text: task, completed: false, pinned: false }
+        ]);
+      }
       setTask('');
     } else {
       Alert.alert('Error', 'Task cannot be empty');
     }
   };
 
+  const togglePinTask = (taskId) => {
+    const updatedTasks = tasks.map(task => 
+      task.id === taskId? {...task, pinned: !task.pinned} : task
+    )
+    setTasks(updatedTasks);
+  }
   const toggleSelectMode = () => {
     setSelectMode(!selectMode);
     setSelectedTasks([]);
@@ -35,7 +61,7 @@ const TodoList = () => {
     if (isSelected) {
       setSelectedTasks(selectedTasks.filter(id => id !== taskId));
     } else {
-      setSelectedTasks([...selectedTasks, taskId]);
+      setSelectedTasks([...selectedTasks, taskId]); 
     }
   };
 
@@ -51,10 +77,21 @@ const TodoList = () => {
     setTasks(tasks.filter(task => !selectedTasks.includes(task.id)));
     setSelectedTasks([]);
   };
+  
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (a.pinned === b.pinned) return 0;
+    return b.pinned ? 1 : -1;
+  });
+
+  const setTaskToEdit = (item) => {
+    setTask(item.text);
+    setEditingTaskId(item.id);
+  }
 
   return (
+    
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.headerStyle}>
         <Text style={styles.title}>ToDoList</Text>
         
         {selectMode && selectedTasks.length > 0 ? (
@@ -76,13 +113,16 @@ const TodoList = () => {
           onChangeText={setTask}
         />
         <TouchableOpacity onPress={addTask} style={styles.addButton}>
-          <Text style={styles.addButtonText}>Add</Text>
+          <Text style={styles.addButtonText}>{editingTaskId ? 'Save' : 'Add'}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {tasks.map((item) => (
-          <View key={item.id} style={styles.taskContainer}>
+      <FlatList 
+      
+        data={sortedTasks}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.taskContainer}>
             {selectMode && (
               <TouchableOpacity
                 onPress={() => toggleSelectTask(item.id)}
@@ -94,10 +134,19 @@ const TodoList = () => {
                 {selectedTasks.includes(item.id) && <Text style={styles.checkmark}>✓</Text>}
               </TouchableOpacity>
             )}
-            <Text style={styles.taskText}>{item.text}</Text>
+            {/* <Text style={styles.taskText}>{item.text}</Text> */}
+            <Text style={styles.taskText}>{item.pinned ? '📌 ' : ''}{item.text}</Text>
+            <TouchableOpacity onPress={() => togglePinTask(item.id)} style={styles.pinButton}>
+              <Text style={styles.pinButtonText}>{item.pinned ? 'Unpin' : 'Pin'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setTaskToEdit(item)} style={styles.editButtonStyle}>
+              <Text style={styles.pinButtonText}>{'Edit'}</Text>
+            </TouchableOpacity>
+            
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
     </SafeAreaView>
   );
 };
@@ -108,7 +157,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
-  header: {
+  headerStyle: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -191,6 +240,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  pinButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#e67e22',
+    borderRadius: 5
+  },
+  pinButtonText: {
+    color: 'white',
+    fontWeight: 'bold'
+  },
+  editButtonStyle: {
+    marginLeft: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: '#9c33ff',
+    borderRadius: 5
+  }
 });
-
 export default TodoList;

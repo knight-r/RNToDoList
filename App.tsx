@@ -11,9 +11,7 @@ import { ScrollView } from 'react-native';
 
 const App = () => {
   return (
-    <ScrollView>
       <Home />
-    </ScrollView>
   );
 };
 
